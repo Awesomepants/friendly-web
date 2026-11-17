@@ -13,20 +13,8 @@ const io = new Server(server, {
         methods: ["GET", "POST"]
     }
 });
-// If this project were to scale to a production level, we'd almost certainly want to implement a databse rather than caching messages in the RAM. The function of this is moreso to allow a user to accidentally close the message box or navigate away without losing their current conversation, the goal is NOT to keep messages for posterity. The server could run out of RAM if many users used this extension.
 const MESSAGECACHELIMIT = 100;
-const messageCache = {};
-/*
-messageCache Schema:
-{
-"https://room.url": [
-        {
-            "color":'#ffffff',
-            "message":'hello world!'
-    }
-]
-}
-*/
+
 // Serve static files, see if we can get rid of these later since it's a browser extension
 app.use(express.static(path.join(__dirname, 'public', 'index.html')));
 // I'm not sure this gets used, candidate for removal
@@ -36,7 +24,7 @@ app.get('/', (req, res) => {
 
 //Above code will become obselete, setting up local sqlite database:
 
-const db = new DatabaseSync("messages.db");
+const db = new DatabaseSync("data/messages.db");
 db.exec(`CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY,
     message TEXT,
@@ -78,16 +66,6 @@ io.on('connection', (socket) => {
     }
     const roomId = roomCheck.get(url).id;
     console.log(`Room ID ${roomId}`);
-    // Legacy code, possibly delete soon
-    /*
-    if(!messageCache[url]){
-        console.log(`no existing message cache for ${url}, creating one: `);
-        messageCache[url] = [];
-    } else {
-        //socket.emit("messagescache", messageCache[url]);
-    }
-        */
-
     if (color === "null" || color === "undefined" || color === null || color === undefined){
         console.log("Generating new color, color was " + color);
         color = colorgenerator.getRandomHexColor();
@@ -107,13 +85,8 @@ io.on('connection', (socket) => {
             message: data,
             color: color
         }
-        // RAM-based message cache (marking to phase out):
-        //messageCache[url].push(message);
         socket.to(url).emit("message", message);
         socket.emit("message", message);
-       /* if(messageCache[url].length > MESSAGECACHELIMIT){
-            messageCache[url].shift();
-        }*/
         // SQLite based message storage
         newMessage.run(data, color, roomId);
     })

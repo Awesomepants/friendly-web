@@ -5,6 +5,7 @@ const path = require('path');
 const colorgenerator = require('./generatecolor.js');
 const app = express();
 const server = http.createServer(app);
+const { DatabaseSync } = require('node:sqlite');
 require("dotenv").config();
 const io = new Server(server, {
     cors: {
@@ -33,6 +34,24 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+//Above code will become obselete, setting up local sqlite database:
+
+const db = new DatabaseSync("messages.db");
+db.exec(`CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY,
+    message TEXT,
+    color TEXT,
+    room_id INTEGER
+    )`);
+db.exec(`CREATE TABLE IF NOT EXISTS rooms (
+    id INTEGER PRIMARY KEY,
+    url TEXT
+    )`);
+const newMessage = db.prepare("INSERT INTO messages (message, color, room_id) VALUES (?, ?, ?)");
+const newRoom = db.prepare("INSERT INTO rooms (url) VALUES (?)");
+const roomCheck = db.prepare("SELECT id, url FROM rooms WHERE url = ?");
+const getMessagesCache = db.prepare("SELECT message, color FROM messages ORDER BY id DESC LIMIT ?");
+
 io.on('connection', (socket) => {
     console.log('A user connected');
     const queryUrl = socket.handshake.query.url;
@@ -48,12 +67,27 @@ io.on('connection', (socket) => {
     socket.join(url);
     console.log("joined " + url);
     console.log(socket.rooms);
+    if(!roomCheck.get(url)){
+        console.log("Room not yet entered into database, entering");
+        newRoom.run(url);
+    } else {
+        console.log(`Room ${url} exists in database`);
+        const gotMessages = getMessagesCache.all(MESSAGECACHELIMIT);
+        console.log(gotMessages);
+        socket.emit("messagescache", gotMessages.reverse());
+    }
+    const roomId = roomCheck.get(url).id;
+    console.log(`Room ID ${roomId}`);
+    // Legacy code, possibly delete soon
+    /*
     if(!messageCache[url]){
         console.log(`no existing message cache for ${url}, creating one: `);
         messageCache[url] = [];
     } else {
-        socket.emit("messagescache", messageCache[url]);
+        //socket.emit("messagescache", messageCache[url]);
     }
+        */
+
     if (color === "null" || color === "undefined" || color === null || color === undefined){
         console.log("Generating new color, color was " + color);
         color = colorgenerator.getRandomHexColor();
@@ -73,12 +107,15 @@ io.on('connection', (socket) => {
             message: data,
             color: color
         }
-        messageCache[url].push(message);
+        // RAM-based message cache (marking to phase out):
+        //messageCache[url].push(message);
         socket.to(url).emit("message", message);
         socket.emit("message", message);
-        if(messageCache[url].length > MESSAGECACHELIMIT){
+       /* if(messageCache[url].length > MESSAGECACHELIMIT){
             messageCache[url].shift();
-        }
+        }*/
+        // SQLite based message storage
+        newMessage.run(data, color, roomId);
     })
 })
 const PORT = 8080;

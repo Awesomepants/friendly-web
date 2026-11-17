@@ -1,0 +1,15 @@
+{
+    "name": "Friendly web",
+    "description": "Browsing the web doesn't have to be lonely anymore! Talk to people in the same corners of the internet.",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action": {
+        "default_popup": "hello.html",
+        "default_icon": "hello_extensions.png"
+    },
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "storage"
+    ]
+}

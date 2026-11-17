@@ -1,0 +1,6 @@
+- When extension is opened, user is moved into a room based on the url DONE
+- Add chat interface DONE
+- use chrome.storage API so that color persists even when the socket connection resets. DONE
+- if possible, establish connection to the server before user opens the extension menu, and send them notifications if messages appear while the extension menu is minimized - use case for the push API? - too involved for scope of project, instead cache a few messages on server and show to user when they connect.
+- create chatrooms based on the URL but ignore the query strings (otherwise some websites would become nearly impossible to find other users)
+- deploy to a service like heroku

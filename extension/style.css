@@ -1,0 +1,5 @@
+#messages-box {
+    background-color: #9da1b4;
+    height: 30em;
+    overflow: auto;
+}

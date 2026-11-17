@@ -1,4 +1,4 @@
-const socket_server = "http://localhost:3000";
+const socket_server = "https://friendly-web.fly.dev/";
 const sendMessageButton = document.getElementById("compose-send-message");
 const messageTextBox = document.getElementById("compose-textbox");
 const chatBox = document.getElementById("messages-box");

@@ -38,7 +38,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS rooms (
 const newMessage = db.prepare("INSERT INTO messages (message, color, room_id) VALUES (?, ?, ?)");
 const newRoom = db.prepare("INSERT INTO rooms (url) VALUES (?)");
 const roomCheck = db.prepare("SELECT id, url FROM rooms WHERE url = ?");
-const getMessagesCache = db.prepare("SELECT message, color FROM messages ORDER BY id DESC LIMIT ?");
+const getMessagesCache = db.prepare("SELECT message, color FROM messages WHERE room_id = ? ORDER BY id DESC LIMIT ?");
 
 io.on('connection', (socket) => {
     console.log('A user connected');
@@ -60,12 +60,11 @@ io.on('connection', (socket) => {
         newRoom.run(url);
     } else {
         console.log(`Room ${url} exists in database`);
-        const gotMessages = getMessagesCache.all(MESSAGECACHELIMIT);
-        console.log(gotMessages);
-        socket.emit("messagescache", gotMessages.reverse());
     }
     const roomId = roomCheck.get(url).id;
     console.log(`Room ID ${roomId}`);
+    const gotMessages = getMessagesCache.all(roomId, MESSAGECACHELIMIT);
+    socket.emit("messagescache", gotMessages.reverse());
     if (color === "null" || color === "undefined" || color === null || color === undefined){
         console.log("Generating new color, color was " + color);
         color = colorgenerator.getRandomHexColor();

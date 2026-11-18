@@ -9,10 +9,10 @@ const { DatabaseSync } = require('node:sqlite');
 require("dotenv").config();
 const io = new Server(server, {
     cors: {
-        origin: "chrome-extension://fldpkmcdfocmefnjgaaihminbhpampdm",
-        methods: ["GET", "POST"]
+        origin: "*"
     }
 });
+//dblfeibibfecjeeipceicockhicaeigm
 const MESSAGECACHELIMIT = 100;
 
 // Serve static files, see if we can get rid of these later since it's a browser extension
@@ -22,7 +22,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-//Above code will become obselete, setting up local sqlite database:
+//Setting up local sqlite database:
 
 const db = new DatabaseSync("data/messages.db");
 db.exec(`CREATE TABLE IF NOT EXISTS messages (
